@@ -1,87 +1,95 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
-	"time"
+
+	"github.com/joho/godotenv"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+
+	"restaurant-backend/internal/config"
+	"restaurant-backend/internal/handler"
+	"restaurant-backend/internal/models"
+	"restaurant-backend/internal/repository"
+	"restaurant-backend/internal/service"
 )
 
 type Application struct {
-	Logger *log.Logger
+	Config      *config.Config
+	UserRepo    *repository.UserRepository
+	RefreshRepo *repository.RefreshTokenRepository
+	AuthService *service.AuthService
+	AuthHandler *handler.AuthHandler
+	RestaurantService *service.RestaurantService
+	RestaurantHandler *handler.RestaurantHandler
 }
 
 func main() {
-	logger := log.Default()
+	_ = godotenv.Load()
+
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	db, err := gorm.Open(postgres.Open(cfg.DBURL), &gorm.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("database connected")
+
+	if err := db.AutoMigrate(
+		&models.User{},
+		&models.RefreshToken{},
+		&models.Restaurant{},
+		&models.Category{},
+		&models.MenuItem{},
+		&models.RestaurantTable{},
+		&models.Reservation{},
+		&models.Order{},
+		&models.OrderItem{},
+		&models.Review{},
+	); err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("database migration completed")
+
+	userRepo := repository.NewUserRepository(db)
+	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
+	restaurantRepo := repository.NewRestaurantRepository(db)
+
+restaurantService := service.NewRestaurantService(
+	restaurantRepo,
+)
+
+restaurantHandler := handler.NewRestaurantHandler(
+	restaurantService,
+)
+
+	authSvc := service.NewAuthService(
+		userRepo,
+		refreshTokenRepo,
+		&cfg,
+	)
+
+	authHandler := handler.NewAuthHandler(authSvc)
 
 	app := &Application{
-		Logger: logger,
+		Config:      &cfg,
+		UserRepo:    userRepo,
+		RefreshRepo: refreshTokenRepo,
+		AuthService: authSvc,
+		AuthHandler: authHandler,
+		RestaurantService: restaurantService,
+	RestaurantHandler: restaurantHandler,
 	}
 
-	server := &http.Server{
-		Addr:         ":8080",
-		Handler:      app.routes(),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 30 * time.Second,
-	}
+	log.Println("server listening on :8080")
 
-	logger.Println("server started on http://localhost:8080")
-
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		logger.Fatal(err)
-	}
-}
-
-func (app *Application) routes() http.Handler {
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("GET /health", app.healthCheckHandler)
-	mux.HandleFunc("GET /api/v1/restaurants", app.listRestaurantsHandler)
-
-	return mux
-}
-
-func (app *Application) healthCheckHandler(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
-	response := map[string]string{
-		"status":  "ok",
-		"service": "restaurant-api",
-	}
-
-	writeJSON(w, http.StatusOK, response)
-}
-
-func (app *Application) listRestaurantsHandler(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
-	response := map[string]any{
-		"data":  []string{},
-		"page":  1,
-		"limit": 20,
-	}
-
-	writeJSON(w, http.StatusOK, response)
-}
-
-func writeJSON(
-	w http.ResponseWriter,
-	status int,
-	data any,
-) {
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-
-	if _, err := w.Write(jsonData); err != nil {
-		log.Printf("failed to write response: %v", err)
+	if err := http.ListenAndServe(":8080", app.routes()); err != nil {
+		log.Fatal(err)
 	}
 }
