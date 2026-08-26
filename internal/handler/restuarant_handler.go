@@ -253,3 +253,4 @@ func (h *RestaurantHandler) Delete(
 
 	w.WriteHeader(http.StatusNoContent)
 }
+

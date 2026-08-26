@@ -9,6 +9,7 @@ import (
 
     "github.com/golang-jwt/jwt/v5"
     "golang.org/x/crypto/bcrypt"
+    "github.com/google/uuid"
 
     "restaurant-backend/internal/config"
     "restaurant-backend/internal/models"
@@ -19,6 +20,7 @@ var (
     ErrInvalidCredentials = errors.New("invalid credentials")
     ErrInvalidToken       = errors.New("invalid token")
 )
+
 
 type AuthService struct {
     userRepo       *repository.UserRepository
@@ -64,12 +66,12 @@ func (s *AuthService) Register(in RegisterInput) (*models.User, error) {
         return nil, err
     }
 
-    user := &models.User{
-        Name:         in.Name,
-        Email:        in.Email,
-        PasswordHash: hash,
-        Role:         in.Role,
-    }
+   user := &models.User{
+	Name:         in.Name,
+	Email:        in.Email,
+	PasswordHash: hash,
+	Role:         "customer",
+}
 
     if err := s.userRepo.Create(user); err != nil {
         return nil, err
@@ -189,14 +191,15 @@ func (s *AuthService) Logout(rawToken string) error {
 
 // Get user by ID (for /me)
 
-func (s *AuthService) GetUserByID(id int64) (*models.User, error) {
+func (s *AuthService) GetUserByID(id uuid.UUID) (*models.User, error) {
     return s.userRepo.GetByID(id)
 }
 
 // JWT helpers
 
+
 type AuthClaims struct {
-    UserID int64        `json:"user_id"`
+    UserID uuid.UUID       `json:"user_id"`
     Role   models.UserRole `json:"role"`
     jwt.RegisteredClaims
 }
@@ -205,11 +208,11 @@ func (s *AuthService) newAccessToken(user *models.User) (string, error) {
     now := time.Now()
     claims := AuthClaims{
         UserID: user.ID,
-        Role:   user.Role,
+        Role:   models.UserRole(user.Role),
         RegisteredClaims: jwt.RegisteredClaims{
             Issuer:    "https://api.yourrestaurant.com",
             Audience:  jwt.ClaimStrings{"restaurant-api"},
-            Subject:   fmt.Sprintf("%d", user.ID),
+            Subject:   user.ID.String(),
             IssuedAt:  jwt.NewNumericDate(now),
             ExpiresAt: jwt.NewNumericDate(now.Add(s.cfg.JWTAccessExpiry)),
         },
@@ -225,11 +228,11 @@ func (s *AuthService) newRefreshTokenRaw(user *models.User) (string, *models.Ref
 
     claims := AuthClaims{
         UserID: user.ID,
-        Role:   user.Role,
+        Role:   models.UserRole(user.Role),
         RegisteredClaims: jwt.RegisteredClaims{
             Issuer:    "https://api.yourrestaurant.com",
             Audience:  jwt.ClaimStrings{"restaurant-api"},
-            Subject:   fmt.Sprintf("%d", user.ID),
+            Subject:   user.ID.String(),
             IssuedAt:  jwt.NewNumericDate(now),
             ExpiresAt: jwt.NewNumericDate(exp),
         },
@@ -245,15 +248,15 @@ func (s *AuthService) newRefreshTokenRaw(user *models.User) (string, *models.Ref
     tokenHash := hex.EncodeToString(h[:])
 
     rt := &models.RefreshToken{
-        UserID:    user.ID,
+        UserID:    user.ID, // now uuid.UUID
         TokenHash: tokenHash,
         ExpiresAt: exp,
         Revoked:   false,
         CreatedAt: now,
-    }
-
+    } 
     return raw, rt, nil
 }
+
 
 func (s *AuthService) ParseAndValidateAccessToken(tokenStr string) (*AuthClaims, error) {
     token, err := jwt.ParseWithClaims(tokenStr, &AuthClaims{}, func(token *jwt.Token) (any, error) {
@@ -271,7 +274,7 @@ func (s *AuthService) ParseAndValidateAccessToken(tokenStr string) (*AuthClaims,
         return nil, ErrInvalidToken
     }
 
-    if claims.UserID <= 0 {
+    if claims.UserID == uuid.Nil {
         return nil, ErrInvalidToken
     }
 

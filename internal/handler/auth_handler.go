@@ -1,21 +1,28 @@
 package handler
 
 import (
-	"encoding/json"
-	"errors"
-	"net/http"
-	"time"
+    "encoding/json"
+    "errors"
+    "net/http"
+    "time"
 
-	"restaurant-backend/internal/service"
+    "github.com/google/uuid"
+    "gorm.io/gorm"
 
-	"restaurant-backend/internal/models"
-
-	"gorm.io/gorm"
+    "restaurant-backend/internal/middleware"
+    "restaurant-backend/internal/models"
+    "restaurant-backend/internal/service"
 )
 
 type AuthHandler struct {
     authSvc *service.AuthService
 }
+
+func NewAuthHandler(authSvc *service.AuthService) *AuthHandler {
+    return &AuthHandler{authSvc: authSvc}
+}
+
+
 
 type RegisterRequest struct {
     Name     string `json:"name"`
@@ -24,10 +31,12 @@ type RegisterRequest struct {
     Role     string `json:"role"`
 }
 
-func NewAuthHandler(authSvc *service.AuthService) *AuthHandler {
-    return &AuthHandler{authSvc: authSvc}
+type LoginRequest struct {
+    Email    string `json:"email"`
+    Password string `json:"password"`
 }
 
+// ---------- handlers ----------
 
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
     if r.Method != http.MethodPost {
@@ -70,11 +79,6 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
         "message": "user created",
         "user_id": user.ID,
     })
-}
-
-type LoginRequest struct {
-    Email    string `json:"email"`
-    Password string `json:"password"`
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -181,8 +185,8 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    userIDRaw := r.Context().Value("user_id")
-    userID, ok := userIDRaw.(int64)
+    userIDRaw := r.Context().Value(middleware.UserIDKey)
+    userID, ok := userIDRaw.(uuid.UUID)
     if !ok {
         writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "user_id missing"})
         return

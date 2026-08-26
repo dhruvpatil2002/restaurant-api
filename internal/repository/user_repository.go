@@ -2,6 +2,7 @@ package repository
 
 import (
     "restaurant-backend/internal/models"
+    "github.com/google/uuid"
 
     "gorm.io/gorm"
 )
@@ -30,15 +31,13 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
     return &u, nil
 }
 
-func (r *UserRepository) GetByID(id int64) (*models.User, error) {
+func (r *UserRepository) GetByID(id uuid.UUID) (*models.User, error) {
     var u models.User
-    if err := r.db.First(&u, id).Error; err != nil {
+    if err := r.db.First(&u, "id = ?", id).Error; err != nil {
         return nil, err
     }
     return &u, nil
 }
-
-
 func NewRefreshTokenRepository(db *gorm.DB) *RefreshTokenRepository {
     return &RefreshTokenRepository{db: db}
 }
