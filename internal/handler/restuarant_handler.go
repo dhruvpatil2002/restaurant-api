@@ -3,7 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-
+"fmt"
 	"github.com/google/uuid"
 
 	"restaurant-backend/internal/middleware"
@@ -71,21 +71,66 @@ func (h *RestaurantHandler) GetAll(
 	r *http.Request,
 ) {
 
-	restaurants, err := h.Service.GetAll()
+	page := 1
+	limit := 10
+
+	if value := r.URL.Query().Get("page"); value != "" {
+
+		if _, err := fmt.Sscanf(
+			value,
+			"%d",
+			&page,
+		); err != nil {
+
+			writeError(
+				w,
+				http.StatusBadRequest,
+				"invalid page",
+			)
+			return
+		}
+	}
+
+	if value := r.URL.Query().Get("limit"); value != "" {
+
+		if _, err := fmt.Sscanf(
+			value,
+			"%d",
+			&limit,
+		); err != nil {
+
+			writeError(
+				w,
+				http.StatusBadRequest,
+				"invalid limit",
+			)
+			return
+		}
+	}
+
+	search := r.URL.Query().Get("search")
+
+	result, err := h.Service.GetAllPaginated(
+		page,
+		limit,
+		search,
+	)
 
 	if err != nil {
+
 		writeError(
 			w,
 			http.StatusInternalServerError,
 			"failed to get restaurants",
 		)
+
 		return
 	}
 
 	writeJSON(
 		w,
 		http.StatusOK,
-		restaurants,
+		result,
 	)
 }
 

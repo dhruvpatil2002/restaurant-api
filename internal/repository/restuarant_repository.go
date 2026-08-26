@@ -83,3 +83,42 @@ func (r *RestaurantRepository) Delete(
 		id,
 	).Error
 }
+
+func (r *RestaurantRepository) FindAllPaginated(
+	page int,
+	limit int,
+	search string,
+) ([]models.Restaurant, int64, error) {
+
+	var restaurants []models.Restaurant
+	var total int64
+
+	offset := (page - 1) * limit
+
+	query := r.DB.Model(&models.Restaurant{})
+
+	// Search by restaurant name
+	if search != "" {
+		query = query.Where(
+			"name ILIKE ?",
+			"%"+search+"%",
+		)
+	}
+
+	// Get total records
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Get paginated records
+	if err := query.
+		Order("created_at DESC").
+		Offset(offset).
+		Limit(limit).
+		Find(&restaurants).Error; err != nil {
+
+		return nil, 0, err
+	}
+
+	return restaurants, total, nil
+}

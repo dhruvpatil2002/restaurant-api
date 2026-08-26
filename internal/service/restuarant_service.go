@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"math"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -21,6 +22,10 @@ func NewRestaurantService(
 		Repo: repo,
 	}
 }
+
+// =====================================================
+// CREATE
+// =====================================================
 
 func (s *RestaurantService) Create(
 	ownerID uuid.UUID,
@@ -42,24 +47,100 @@ func (s *RestaurantService) Create(
 	return s.Repo.Create(restaurant)
 }
 
-func (s *RestaurantService) GetByID(
-	id uuid.UUID,
-) (*models.Restaurant, error) {
-	return s.Repo.FindByID(id)
-}
+// =====================================================
+// GET BY OWNER
+// =====================================================
 
 func (s *RestaurantService) GetByOwner(
 	ownerID uuid.UUID,
 ) (*models.Restaurant, error) {
+
 	return s.Repo.FindByOwnerID(ownerID)
 }
+
+// =====================================================
+// GET ALL
+// =====================================================
 
 func (s *RestaurantService) GetAll() (
 	[]models.Restaurant,
 	error,
 ) {
+
 	return s.Repo.FindAll()
 }
+
+// =====================================================
+// GET ALL PAGINATED
+// =====================================================
+
+func (s *RestaurantService) GetAllPaginated(
+	page int,
+	limit int,
+	search string,
+) (*models.PaginatedRestaurants, error) {
+
+	// Default page
+	if page < 1 {
+		page = 1
+	}
+
+	// Default limit
+	if limit < 1 {
+		limit = 10
+	}
+
+	// Maximum limit
+	if limit > 100 {
+		limit = 100
+	}
+
+	restaurants, total, err :=
+		s.Repo.FindAllPaginated(
+			page,
+			limit,
+			search,
+		)
+
+	if err != nil {
+		return nil, err
+	}
+
+	totalPages := 0
+
+	if total > 0 {
+		totalPages = int(
+			math.Ceil(
+				float64(total)/float64(limit),
+			),
+		)
+	}
+
+	return &models.PaginatedRestaurants{
+		Data: restaurants,
+		Pagination: models.Pagination{
+			Page:       page,
+			Limit:      limit,
+			Total:      total,
+			TotalPages: totalPages,
+		},
+	}, nil
+}
+
+// =====================================================
+// GET BY ID
+// =====================================================
+
+func (s *RestaurantService) GetByID(
+	id uuid.UUID,
+) (*models.Restaurant, error) {
+
+	return s.Repo.FindByID(id)
+}
+
+// =====================================================
+// UPDATE
+// =====================================================
 
 func (s *RestaurantService) Update(
 	ownerID uuid.UUID,
@@ -74,7 +155,9 @@ func (s *RestaurantService) Update(
 	}
 
 	if restaurant.OwnerID != ownerID {
-		return nil, errors.New("you do not own this restaurant")
+		return nil, errors.New(
+			"you do not own this restaurant",
+		)
 	}
 
 	restaurant.Name = data.Name
@@ -97,6 +180,10 @@ func (s *RestaurantService) Update(
 	return restaurant, nil
 }
 
+// =====================================================
+// DELETE
+// =====================================================
+
 func (s *RestaurantService) Delete(
 	ownerID uuid.UUID,
 	id uuid.UUID,
@@ -109,7 +196,9 @@ func (s *RestaurantService) Delete(
 	}
 
 	if restaurant.OwnerID != ownerID {
-		return errors.New("you do not own this restaurant")
+		return errors.New(
+			"you do not own this restaurant",
+		)
 	}
 
 	return s.Repo.Delete(id)
