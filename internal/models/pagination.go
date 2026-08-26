@@ -11,3 +11,8 @@ type PaginatedRestaurants struct {
 	Data       []Restaurant `json:"data"`
 	Pagination Pagination   `json:"pagination"`
 }
+
+type PaginatedMenus struct {
+	Data       []Menu `json:"data"`
+	Pagination Pagination `json:"pagination"`
+}

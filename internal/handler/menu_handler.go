@@ -3,6 +3,8 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+		"fmt"
+		"strconv"
 
 	"github.com/google/uuid"
 
@@ -123,7 +125,7 @@ func (h *MenuHandler) Create(
 // GET /api/restaurants/{restaurantId}/menu
 // =====================================================
 
-func (h *MenuHandler) GetRestaurantMenu(
+func (h *MenuHandler) GetRestaurantMenuPaginated(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
@@ -142,9 +144,84 @@ func (h *MenuHandler) GetRestaurantMenu(
 
 		return
 	}
+	page := 1
 
-	menus, err := h.Service.GetRestaurantMenu(
+	if value := r.URL.Query().Get("page"); value != "" {
+
+		if _, err := fmt.Sscanf(
+			value,
+			"%d",
+			&page,
+		); err != nil {
+
+			writeError(
+				w,
+				http.StatusBadRequest,
+				"invalid page",
+			)
+
+			return
+		}
+	}
+
+	limit := 10
+
+	if value := r.URL.Query().Get("limit"); value != "" {
+
+		if _, err := fmt.Sscanf(
+			value,
+			"%d",
+			&limit,
+		); err != nil {
+
+			writeError(
+				w,
+				http.StatusBadRequest,
+				"invalid limit",
+			)
+
+			return
+		}
+	}
+
+	search := r.URL.Query().Get("search")
+
+	// =========================
+	// CATEGORY
+	// =========================
+
+	category := r.URL.Query().Get("category")
+
+	// =========================
+	// AVAILABILITY
+	// =========================
+
+	var available *bool
+
+	if value := r.URL.Query().Get("available"); value != "" {
+
+		parsed, err := strconv.ParseBool(value)
+
+		if err != nil {
+
+			writeError(
+				w,
+				http.StatusBadRequest,
+				"available must be true or false",
+			)
+
+			return
+		}
+
+		available = &parsed
+	}
+result, err := h.Service.GetRestaurantMenuPaginated(
 		restaurantID,
+		page,
+		limit,
+		search,
+		category,
+		available,
 	)
 
 	if err != nil {
@@ -161,14 +238,9 @@ func (h *MenuHandler) GetRestaurantMenu(
 	writeJSON(
 		w,
 		http.StatusOK,
-		menus,
+		result,
 	)
 }
-
-// =====================================================
-// GET MENU BY ID
-// GET /api/menu/{id}
-// =====================================================
 
 func (h *MenuHandler) GetByID(
 	w http.ResponseWriter,

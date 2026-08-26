@@ -134,7 +134,7 @@ func (app *Application) routes() http.Handler {
 	// Get all menu items for restaurant
 	mux.HandleFunc(
 		"GET /api/restaurants/{restaurantId}/menu",
-		app.MenuHandler.GetRestaurantMenu,
+		app.MenuHandler.GetRestaurantMenuPaginated,
 	)
 
 	// Get menu item by ID

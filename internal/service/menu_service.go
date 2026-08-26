@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"math"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -203,4 +204,62 @@ func (s *MenuService) Exists(
 	_, err := s.MenuRepo.FindByID(id)
 
 	return !errors.Is(err, gorm.ErrRecordNotFound)
+}
+
+func (s *MenuService) GetRestaurantMenuPaginated(
+	restaurantID uuid.UUID,
+	page int,
+	limit int,
+	search string,
+	category string,
+	available *bool,
+) (*models.PaginatedMenus, error) {
+
+	// Default page
+	if page < 1 {
+		page = 1
+	}
+
+	// Default limit
+	if limit < 1 {
+		limit = 10
+	}
+
+	// Maximum limit
+	if limit > 100 {
+		limit = 100
+	}
+
+	menus, total, err := s.MenuRepo.FindPaginated(
+		restaurantID,
+		page,
+		limit,
+		search,
+		category,
+		available,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	totalPages := 0
+
+	if total > 0 {
+		totalPages = int(
+			math.Ceil(
+				float64(total)/float64(limit),
+			),
+		)
+	}
+
+	return &models.PaginatedMenus{
+		Data: menus,
+		Pagination: models.Pagination{
+			Page:       page,
+			Limit:      limit,
+			Total:      total,
+			TotalPages: totalPages,
+		},
+	}, nil
 }

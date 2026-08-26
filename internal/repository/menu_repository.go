@@ -94,3 +94,67 @@ func (r *MenuRepository) Delete(
 		id,
 	).Error
 }
+
+func (r *MenuRepository) FindPaginated(
+	restaurantID uuid.UUID,
+	page int,
+	limit int,
+	search string,
+	category string,
+	available *bool,
+) ([]models.Menu, int64, error) {
+
+	var menus []models.Menu
+	var total int64
+
+	offset := (page - 1) * limit
+
+	query := r.DB.
+		Model(&models.Menu{}).
+		Where(
+			"restaurant_id = ?",
+			restaurantID,
+		)
+
+	// Search by menu name or description
+	if search != "" {
+		query = query.Where(
+			"(name ILIKE ? OR description ILIKE ?)",
+			"%"+search+"%",
+			"%"+search+"%",
+		)
+	}
+
+	// Category filter
+	if category != "" {
+		query = query.Where(
+			"category = ?",
+			category,
+		)
+	}
+
+	// Availability filter
+	if available != nil {
+		query = query.Where(
+			"is_available = ?",
+			*available,
+		)
+	}
+
+	// Count total matching records
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Get paginated records
+	if err := query.
+		Order("created_at DESC").
+		Offset(offset).
+		Limit(limit).
+		Find(&menus).Error; err != nil {
+
+		return nil, 0, err
+	}
+
+	return menus, total, nil
+}
