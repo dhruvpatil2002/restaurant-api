@@ -6,23 +6,19 @@ import (
 	"github.com/google/uuid"
 )
 
+// models/reservation.go
+
+// models/reservation.go
+
 type Reservation struct {
-	ID uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-
-	RestaurantID uuid.UUID `gorm:"type:uuid;not null;index"`
-
-	TableID uuid.UUID `gorm:"type:uuid;not null;index"`
-
-	UserID uuid.UUID `gorm:"type:uuid;not null;index"`
-
-	ReservationTime time.Time `gorm:"not null;index"`
-
-	GuestCount int `gorm:"not null"`
-
-	Status string `gorm:"type:varchar(20);not null;default:'pending';index"`
-
-	Notes string
-
-	CreatedAt time.Time
-	UpdatedAt time.Time
+    ID             uuid.UUID `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+    RestaurantID   uuid.UUID `json:"restaurant_id" gorm:"type:uuid;not null;index"`
+    TableID        uuid.UUID `json:"table_id" gorm:"type:uuid;not null;index"`
+    UserID         uuid.UUID `json:"user_id" gorm:"type:uuid;not null;index"`
+    ReservationTime time.Time `json:"reservation_time" gorm:"column:reservation_date;not null;index"` // <-- changed json tag
+    GuestCount     int       `json:"guest_count" gorm:"not null"`
+    Status         string    `json:"status" gorm:"type:varchar(20);not null;default:'pending';index"`
+    Notes          string    `json:"notes"`
+    CreatedAt      time.Time `json:"created_at"`
+    UpdatedAt      time.Time `json:"updated_at"`
 }

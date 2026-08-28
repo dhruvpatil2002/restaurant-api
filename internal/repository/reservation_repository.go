@@ -107,7 +107,11 @@ func (r *ReservationRepository) HasConflict(
 	err := r.DB.
 		Model(&models.Reservation{}).
 		Where(
-			"table_id = ? AND reservation_time = ? AND status IN ?",
+			`
+			table_id = ?
+			AND reservation_time = ?
+			AND status IN ?
+			`,
 			tableID,
 			reservationTime,
 			[]string{"pending", "confirmed"},

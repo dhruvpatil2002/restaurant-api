@@ -11,6 +11,12 @@ import (
 	"restaurant-backend/internal/repository"
 )
 
+var (
+	ErrRestaurantNotFound      = errors.New("restaurant not found")
+	ErrOwnerAlreadyHasRest     = errors.New("owner already has a restaurant")
+	ErrNotRestaurantOwner      = errors.New("you do not own this restaurant")
+)
+
 type RestaurantService struct {
 	Repo *repository.RestaurantRepository
 }
@@ -18,6 +24,7 @@ type RestaurantService struct {
 func NewRestaurantService(
 	repo *repository.RestaurantRepository,
 ) *RestaurantService {
+
 	return &RestaurantService{
 		Repo: repo,
 	}
@@ -35,13 +42,16 @@ func (s *RestaurantService) Create(
 	existing, err := s.Repo.FindByOwnerID(ownerID)
 
 	if err == nil && existing != nil {
-		return errors.New("owner already has a restaurant")
+		return ErrOwnerAlreadyHasRest
 	}
 
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	if err != nil &&
+		!errors.Is(err, gorm.ErrRecordNotFound) {
+
 		return err
 	}
 
+	// NEVER accept OwnerID from client
 	restaurant.OwnerID = ownerID
 
 	return s.Repo.Create(restaurant)
@@ -55,7 +65,13 @@ func (s *RestaurantService) GetByOwner(
 	ownerID uuid.UUID,
 ) (*models.Restaurant, error) {
 
-	return s.Repo.FindByOwnerID(ownerID)
+	restaurant, err := s.Repo.FindByOwnerID(ownerID)
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrRestaurantNotFound
+	}
+
+	return restaurant, err
 }
 
 // =====================================================
@@ -80,17 +96,14 @@ func (s *RestaurantService) GetAllPaginated(
 	search string,
 ) (*models.PaginatedRestaurants, error) {
 
-	// Default page
 	if page < 1 {
 		page = 1
 	}
 
-	// Default limit
 	if limit < 1 {
 		limit = 10
 	}
 
-	// Maximum limit
 	if limit > 100 {
 		limit = 100
 	}
@@ -135,7 +148,13 @@ func (s *RestaurantService) GetByID(
 	id uuid.UUID,
 ) (*models.Restaurant, error) {
 
-	return s.Repo.FindByID(id)
+	restaurant, err := s.Repo.FindByID(id)
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrRestaurantNotFound
+	}
+
+	return restaurant, err
 }
 
 // =====================================================
@@ -150,27 +169,34 @@ func (s *RestaurantService) Update(
 
 	restaurant, err := s.Repo.FindByID(id)
 
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrRestaurantNotFound
+	}
+
 	if err != nil {
 		return nil, err
 	}
 
 	if restaurant.OwnerID != ownerID {
-		return nil, errors.New(
-			"you do not own this restaurant",
-		)
+		return nil, ErrNotRestaurantOwner
 	}
 
+	// Update allowed fields only
 	restaurant.Name = data.Name
 	restaurant.Description = data.Description
+
 	restaurant.Address = data.Address
 	restaurant.City = data.City
 	restaurant.State = data.State
 	restaurant.Pincode = data.Pincode
+
 	restaurant.Phone = data.Phone
 	restaurant.Email = data.Email
 	restaurant.Image = data.Image
+
 	restaurant.OpeningTime = data.OpeningTime
 	restaurant.ClosingTime = data.ClosingTime
+
 	restaurant.IsOpen = data.IsOpen
 
 	if err := s.Repo.Update(restaurant); err != nil {
@@ -191,14 +217,16 @@ func (s *RestaurantService) Delete(
 
 	restaurant, err := s.Repo.FindByID(id)
 
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrRestaurantNotFound
+	}
+
 	if err != nil {
 		return err
 	}
 
 	if restaurant.OwnerID != ownerID {
-		return errors.New(
-			"you do not own this restaurant",
-		)
+		return ErrNotRestaurantOwner
 	}
 
 	return s.Repo.Delete(id)

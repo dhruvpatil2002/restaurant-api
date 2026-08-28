@@ -17,11 +17,20 @@ func NewRestaurantRepository(db *gorm.DB) *RestaurantRepository {
 	}
 }
 
+// =====================================================
+// CREATE
+// =====================================================
+
 func (r *RestaurantRepository) Create(
 	restaurant *models.Restaurant,
 ) error {
+
 	return r.DB.Create(restaurant).Error
 }
+
+// =====================================================
+// FIND BY ID
+// =====================================================
 
 func (r *RestaurantRepository) FindByID(
 	id uuid.UUID,
@@ -40,6 +49,10 @@ func (r *RestaurantRepository) FindByID(
 	return &restaurant, nil
 }
 
+// =====================================================
+// FIND BY OWNER
+// =====================================================
+
 func (r *RestaurantRepository) FindByOwnerID(
 	ownerID uuid.UUID,
 ) (*models.Restaurant, error) {
@@ -57,32 +70,54 @@ func (r *RestaurantRepository) FindByOwnerID(
 	return &restaurant, nil
 }
 
+// =====================================================
+// FIND ALL
+// =====================================================
+
 func (r *RestaurantRepository) FindAll() (
 	[]models.Restaurant,
 	error,
 ) {
+
 	var restaurants []models.Restaurant
 
-	err := r.DB.Find(&restaurants).Error
+	err := r.DB.
+		Order("created_at DESC").
+		Find(&restaurants).Error
 
 	return restaurants, err
 }
 
+// =====================================================
+// UPDATE
+// =====================================================
+
 func (r *RestaurantRepository) Update(
 	restaurant *models.Restaurant,
 ) error {
+
 	return r.DB.Save(restaurant).Error
 }
+
+// =====================================================
+// DELETE
+// =====================================================
 
 func (r *RestaurantRepository) Delete(
 	id uuid.UUID,
 ) error {
-	return r.DB.Delete(
-		&models.Restaurant{},
-		"id = ?",
-		id,
-	).Error
+
+	return r.DB.
+		Delete(
+			&models.Restaurant{},
+			"id = ?",
+			id,
+		).Error
 }
+
+// =====================================================
+// PAGINATION
+// =====================================================
 
 func (r *RestaurantRepository) FindAllPaginated(
 	page int,
@@ -97,7 +132,7 @@ func (r *RestaurantRepository) FindAllPaginated(
 
 	query := r.DB.Model(&models.Restaurant{})
 
-	// Search by restaurant name
+	// Search restaurant name
 	if search != "" {
 		query = query.Where(
 			"name ILIKE ?",
@@ -105,12 +140,12 @@ func (r *RestaurantRepository) FindAllPaginated(
 		)
 	}
 
-	// Get total records
+	// Total count
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Get paginated records
+	// Data
 	if err := query.
 		Order("created_at DESC").
 		Offset(offset).

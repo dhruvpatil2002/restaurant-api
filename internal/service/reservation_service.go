@@ -15,6 +15,7 @@ type ReservationService struct {
 	RestaurantRepo  *repository.RestaurantRepository
 	TableRepo       *repository.TableRepository
 }
+
 func NewReservationService(
 	reservationRepo *repository.ReservationRepository,
 	restaurantRepo *repository.RestaurantRepository,
@@ -27,6 +28,10 @@ func NewReservationService(
 		TableRepo:       tableRepo,
 	}
 }
+
+// =====================================================
+// CHECK RESTAURANT OWNER
+// =====================================================
 
 func (s *ReservationService) checkRestaurantOwner(
 	restaurantID uuid.UUID,
@@ -47,23 +52,32 @@ func (s *ReservationService) checkRestaurantOwner(
 
 	return nil
 }
+
+// =====================================================
+// CREATE RESERVATION - CUSTOMER
+// =====================================================
+
 func (s *ReservationService) Create(
 	userID uuid.UUID,
 	reservation *models.Reservation,
 ) error {
 
-	// Check restaurant
-	restaurant, err := s.RestaurantRepo.FindByID(
+	// Validate restaurant
+	_, err := s.RestaurantRepo.FindByID(
 		reservation.RestaurantID,
 	)
 
 	if err != nil {
 		return errors.New("restaurant not found")
 	}
+	now := time.Now().UTC()
+	reservationTime := reservation.ReservationTime.UTC()
 
-	_ = restaurant
+	if !reservationTime.After(now) {
+		return errors.New("reservation time must be in the future")
+	}
 
-	// Check table
+	// Validate table
 	table, err := s.TableRepo.FindByID(
 		reservation.TableID,
 	)
@@ -72,65 +86,62 @@ func (s *ReservationService) Create(
 		return errors.New("table not found")
 	}
 
-	// Make sure table belongs to restaurant
+	// Table must belong to selected restaurant
 	if table.RestaurantID != reservation.RestaurantID {
 		return errors.New(
 			"table does not belong to this restaurant",
 		)
 	}
 
-	// Check table availability
+	// Check availability
 	if !table.IsAvailable {
 		return errors.New(
 			"table is not available",
 		)
 	}
 
-	// Validate guests
+	// Validate guest count
 	if reservation.GuestCount <= 0 {
 		return errors.New(
 			"guest count must be greater than zero",
 		)
 	}
 
-	// Guest count cannot exceed table capacity
+	// Check capacity
 	if reservation.GuestCount > table.Capacity {
 		return errors.New(
 			"guest count exceeds table capacity",
 		)
 	}
 
-	// Reservation must be in the future
-	if reservation.ReservationTime.Before(time.Now()) {
-		return errors.New(
-			"reservation time must be in the future",
-		)
-	}
-
-	// Check reservation conflict
+	// Check conflict
 	conflict, err := s.ReservationRepo.HasConflict(
 		reservation.TableID,
 		reservation.ReservationTime,
 	)
+    if err != nil {
+        return err
+    }
 
-	if err != nil {
-		return err
-	}
+    if conflict {
+        return errors.New("table is already reserved for this time")
+    }
 
-	if conflict {
-		return errors.New(
-			"table is already reserved for this time",
-		)
-	}
+	
 
 	// Set authenticated user
 	reservation.UserID = userID
 
-	// Default status
+	// Always set pending
 	reservation.Status = "pending"
 
 	return s.ReservationRepo.Create(reservation)
 }
+
+// =====================================================
+// GET MY RESERVATIONS - CUSTOMER
+// =====================================================
+
 func (s *ReservationService) GetMyReservations(
 	userID uuid.UUID,
 ) ([]models.Reservation, error) {
@@ -139,12 +150,21 @@ func (s *ReservationService) GetMyReservations(
 		userID,
 	)
 }
+
+// =====================================================
+// GET RESERVATION BY ID
+// =====================================================
+
 func (s *ReservationService) GetByID(
 	id uuid.UUID,
 ) (*models.Reservation, error) {
 
 	return s.ReservationRepo.FindByID(id)
 }
+
+// =====================================================
+// CANCEL RESERVATION - CUSTOMER
+// =====================================================
 
 func (s *ReservationService) Cancel(
 	reservationID uuid.UUID,
@@ -161,6 +181,7 @@ func (s *ReservationService) Cancel(
 		)
 	}
 
+	// Only reservation owner can cancel
 	if reservation.UserID != userID {
 		return nil, errors.New(
 			"you do not own this reservation",
@@ -190,11 +211,16 @@ func (s *ReservationService) Cancel(
 	return reservation, nil
 }
 
+// =====================================================
+// GET RESTAURANT RESERVATIONS - OWNER
+// =====================================================
+
 func (s *ReservationService) GetRestaurantReservations(
 	restaurantID uuid.UUID,
 	userID uuid.UUID,
 ) ([]models.Reservation, error) {
 
+	// Verify owner owns this restaurant
 	if err := s.checkRestaurantOwner(
 		restaurantID,
 		userID,
@@ -206,6 +232,10 @@ func (s *ReservationService) GetRestaurantReservations(
 		restaurantID,
 	)
 }
+
+// =====================================================
+// CONFIRM RESERVATION - OWNER
+// =====================================================
 
 func (s *ReservationService) Confirm(
 	reservationID uuid.UUID,
@@ -222,6 +252,7 @@ func (s *ReservationService) Confirm(
 		)
 	}
 
+	// Verify restaurant owner
 	if err := s.checkRestaurantOwner(
 		reservation.RestaurantID,
 		userID,

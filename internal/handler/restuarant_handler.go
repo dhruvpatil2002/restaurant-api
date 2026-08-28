@@ -3,7 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-"fmt"
+	"fmt"
 	"github.com/google/uuid"
 
 	"restaurant-backend/internal/middleware"

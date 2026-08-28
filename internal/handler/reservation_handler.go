@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -24,16 +25,19 @@ func NewReservationHandler(
 	}
 }
 
+// =====================================================
+// CREATE RESERVATION
+// POST /reservations
+// =====================================================
+
 func (h *ReservationHandler) Create(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
 
-	userIDValue := r.Context().Value(
-		middleware.UserIDKey,
-	)
-
-	userID, ok := userIDValue.(uuid.UUID)
+	userID, ok := r.Context().
+		Value(middleware.UserIDKey).
+		(uuid.UUID)
 
 	if !ok {
 		writeError(
@@ -45,17 +49,17 @@ func (h *ReservationHandler) Create(
 	}
 
 	var reservation models.Reservation
+	
+    if err := json.NewDecoder(r.Body).Decode(&reservation); err != nil {
+        log.Printf("❌ JSON decode error: %v", err)
+        writeError(w, http.StatusBadRequest, "invalid request body")
+        return
+    }
 
-	if err := json.NewDecoder(r.Body).
-		Decode(&reservation); err != nil {
-
-		writeError(
-			w,
-			http.StatusBadRequest,
-			"invalid request body",
-		)
-		return
-	}
+    // 🔍 Debug: Check if time was parsed
+    log.Printf("📥 Decoded reservation: %+v", reservation)
+    log.Printf("📅 ReservationTime: %v (is zero? %v)",
+		reservation.ReservationTime, reservation.ReservationTime.IsZero())
 
 	if err := h.Service.Create(
 		userID,
@@ -92,16 +96,19 @@ func (h *ReservationHandler) Create(
 	)
 }
 
+// =====================================================
+// GET MY RESERVATIONS
+// GET /reservations/my
+// =====================================================
+
 func (h *ReservationHandler) GetMyReservations(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
 
-	userIDValue := r.Context().Value(
-		middleware.UserIDKey,
-	)
-
-	userID, ok := userIDValue.(uuid.UUID)
+	userID, ok := r.Context().
+		Value(middleware.UserIDKey).
+		(uuid.UUID)
 
 	if !ok {
 		writeError(
@@ -117,6 +124,7 @@ func (h *ReservationHandler) GetMyReservations(
 	)
 
 	if err != nil {
+
 		writeError(
 			w,
 			http.StatusInternalServerError,
@@ -132,6 +140,11 @@ func (h *ReservationHandler) GetMyReservations(
 	)
 }
 
+// =====================================================
+// GET RESERVATION BY ID
+// GET /reservations/{id}
+// =====================================================
+
 func (h *ReservationHandler) GetByID(
 	w http.ResponseWriter,
 	r *http.Request,
@@ -142,6 +155,7 @@ func (h *ReservationHandler) GetByID(
 	)
 
 	if err != nil {
+
 		writeError(
 			w,
 			http.StatusBadRequest,
@@ -153,6 +167,7 @@ func (h *ReservationHandler) GetByID(
 	reservation, err := h.Service.GetByID(id)
 
 	if err != nil {
+
 		writeError(
 			w,
 			http.StatusNotFound,
@@ -168,18 +183,22 @@ func (h *ReservationHandler) GetByID(
 	)
 }
 
+// =====================================================
+// CANCEL RESERVATION
+// PATCH /reservations/{id}/cancel
+// =====================================================
+
 func (h *ReservationHandler) Cancel(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
 
-	userIDValue := r.Context().Value(
-		middleware.UserIDKey,
-	)
-
-	userID, ok := userIDValue.(uuid.UUID)
+	userID, ok := r.Context().
+		Value(middleware.UserIDKey).
+		(uuid.UUID)
 
 	if !ok {
+
 		writeError(
 			w,
 			http.StatusUnauthorized,
@@ -193,6 +212,7 @@ func (h *ReservationHandler) Cancel(
 	)
 
 	if err != nil {
+
 		writeError(
 			w,
 			http.StatusBadRequest,
@@ -245,18 +265,22 @@ func (h *ReservationHandler) Cancel(
 	)
 }
 
+// =====================================================
+// GET RESTAURANT RESERVATIONS - OWNER
+// GET /restaurants/{restaurantId}/reservations
+// =====================================================
+
 func (h *ReservationHandler) GetRestaurantReservations(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
 
-	userIDValue := r.Context().Value(
-		middleware.UserIDKey,
-	)
-
-	userID, ok := userIDValue.(uuid.UUID)
+	userID, ok := r.Context().
+		Value(middleware.UserIDKey).
+		(uuid.UUID)
 
 	if !ok {
+
 		writeError(
 			w,
 			http.StatusUnauthorized,
@@ -270,6 +294,7 @@ func (h *ReservationHandler) GetRestaurantReservations(
 	)
 
 	if err != nil {
+
 		writeError(
 			w,
 			http.StatusBadRequest,
@@ -322,18 +347,22 @@ func (h *ReservationHandler) GetRestaurantReservations(
 	)
 }
 
+// =====================================================
+// CONFIRM RESERVATION - OWNER
+// PATCH /reservations/{id}/confirm
+// =====================================================
+
 func (h *ReservationHandler) Confirm(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
 
-	userIDValue := r.Context().Value(
-		middleware.UserIDKey,
-	)
-
-	userID, ok := userIDValue.(uuid.UUID)
+	userID, ok := r.Context().
+		Value(middleware.UserIDKey).
+		(uuid.UUID)
 
 	if !ok {
+
 		writeError(
 			w,
 			http.StatusUnauthorized,
@@ -347,6 +376,7 @@ func (h *ReservationHandler) Confirm(
 	)
 
 	if err != nil {
+
 		writeError(
 			w,
 			http.StatusBadRequest,
