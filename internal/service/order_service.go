@@ -89,8 +89,7 @@ func (s *OrderService) Create(
 			)
 		}
 
-		// IMPORTANT:
-		// Never trust frontend price.
+		
 		item.Price = menu.Price
 
 		total += item.Price * float64(item.Quantity)

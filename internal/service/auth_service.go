@@ -21,7 +21,7 @@ import (
 	"restaurant-backend/internal/repository"
 )
 
-// Sentinel errors
+
 var (
 	ErrInvalidCredentials  = errors.New("invalid credentials")
 	ErrInvalidToken        = errors.New("invalid token")
@@ -39,9 +39,7 @@ const (
 	tokenTypeRefresh    = "refresh"
 )
 
-// =====================================================
-// AUTH SERVICE
-// =====================================================
+
 
 type AuthService struct {
 	userRepo *repository.UserRepository
@@ -61,9 +59,7 @@ func NewAuthService(
 	}
 }
 
-// =====================================================
-// PASSWORD HELPERS
-// =====================================================
+
 
 func HashPassword(password string) (string, error) {
 	if len(password) < 6 {
@@ -80,9 +76,7 @@ func CheckPassword(password, hash string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
 
-// =====================================================
-// EMAIL VALIDATION
-// =====================================================
+
 
 func validateEmail(email string) error {
 	// Simple email format check
@@ -93,9 +87,7 @@ func validateEmail(email string) error {
 	return nil
 }
 
-// =====================================================
-// REGISTER
-// =====================================================
+
 
 type RegisterInput struct {
 	Name     string
@@ -104,24 +96,21 @@ type RegisterInput struct {
 	Role     models.UserRole
 }
 
-// Add this sentinel error
 
-// service/auth_service.go
 
 func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*models.User, error) {
     in.Email = strings.ToLower(strings.TrimSpace(in.Email))
     in.Name = strings.TrimSpace(in.Name)
     
-    // Normalize role
+    
     roleStr := strings.ToLower(strings.TrimSpace(string(in.Role)))
     log.Printf("🔄 Service: received role=%q, normalized to %q", string(in.Role), roleStr)
     
-    // Default to customer if empty
+   
     if roleStr == "" {
         roleStr = string(models.RoleCustomer)
     }
     
-    // Validate against allowed roles
     switch roleStr {
     case string(models.RoleCustomer):
         in.Role = models.RoleCustomer
@@ -132,7 +121,7 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*models.U
     case string(models.RoleAdmin):
         in.Role = models.RoleAdmin
     default:
-        log.Printf("❌ Invalid role provided: %q", roleStr)
+        log.Printf(" Invalid role provided: %q", roleStr)
         return nil, ErrInvalidRole
     }
 
@@ -160,9 +149,6 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*models.U
 }
 
 
-// =====================================================
-// LOGIN
-// =====================================================
 
 type LoginInput struct {
 	Email    string
@@ -191,19 +177,18 @@ func (s *AuthService) Login(ctx context.Context, in LoginInput) (*LoginOutput, e
 		return nil, ErrInvalidCredentials
 	}
 
-	// Generate access token
+	
 	accessToken, err := s.newAccessToken(user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create access token: %w", err)
 	}
 
-	// Generate refresh token
 	refreshRaw, refreshToken, err := s.newRefreshTokenRaw(user)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create refresh token: %w", err)
 	}
 
-	// Store hashed refresh token
+	
 	if err := s.rtRepo.Create(ctx, refreshToken); err != nil {
 		return nil, fmt.Errorf("failed to store refresh token: %w", err)
 	}
@@ -216,9 +201,6 @@ func (s *AuthService) Login(ctx context.Context, in LoginInput) (*LoginOutput, e
 	}, nil
 }
 
-// =====================================================
-// REFRESH
-// =====================================================
 
 type RefreshOutput struct {
 	AccessToken     string
@@ -234,7 +216,7 @@ func (s *AuthService) Refresh(ctx context.Context, rawToken string) (*RefreshOut
 
     tokenHash := hashToken(rawToken)
 
-    // Find token in database (not revoked)
+   
     refreshToken, err := s.rtRepo.GetByHashAndNotRevoked(ctx, tokenHash)
     if err != nil {
         if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -243,26 +225,26 @@ func (s *AuthService) Refresh(ctx context.Context, rawToken string) (*RefreshOut
         return nil, fmt.Errorf("failed to get refresh token: %w", err)
     }
 
-    // Check expiration (redundant with JWT but safe)
+    
     if time.Now().After(refreshToken.ExpiresAt) {
-        _ = s.rtRepo.Revoke(ctx, refreshToken) // best effort
+        _ = s.rtRepo.Revoke(ctx, refreshToken) 
         return nil, ErrInvalidRefreshToken
     }
 
-    // Validate JWT signature and claims
+    
     claims, err := s.parseRefreshToken(rawToken)
     if err != nil {
-        _ = s.rtRepo.Revoke(ctx, refreshToken) // revoke on invalid token
+        _ = s.rtRepo.Revoke(ctx, refreshToken) 
         return nil, ErrInvalidRefreshToken
     }
 
-    // Ensure token belongs to the user
+    
     if claims.UserID != refreshToken.UserID {
         _ = s.rtRepo.Revoke(ctx, refreshToken)
         return nil, ErrInvalidRefreshToken
     }
 
-    // Fetch the user
+    
     user, err := s.userRepo.GetByID(ctx, refreshToken.UserID)
     if err != nil {
         if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -273,11 +255,8 @@ func (s *AuthService) Refresh(ctx context.Context, rawToken string) (*RefreshOut
         return nil, fmt.Errorf("failed to get user: %w", err)
     }
 
-    // =================================================
-    // ROTATE REFRESH TOKEN (safer ordering - create before revoke)
-    // =================================================
-    
-    // 1. Generate new tokens FIRST (before revoking old one)
+   
+
     newAccessToken, err := s.newAccessToken(user)
     if err != nil {
         return nil, fmt.Errorf("failed to create new access token: %w", err)
@@ -288,17 +267,15 @@ func (s *AuthService) Refresh(ctx context.Context, rawToken string) (*RefreshOut
         return nil, fmt.Errorf("failed to create new refresh token: %w", err)
     }
 
-    // 2. Store new refresh token
+   
     if err := s.rtRepo.Create(ctx, newRefreshToken); err != nil {
-        // New token wasn't stored, but old token is still valid
-        // Client can retry refresh with the same token
+        
         return nil, fmt.Errorf("failed to store new refresh token: %w", err)
     }
 
-    // 3. Revoke old token (only after new one is safely stored)
+    
     if err := s.rtRepo.Revoke(ctx, refreshToken); err != nil {
-        // This is less critical - old token will expire naturally
-        // or be revoked on next refresh. Log it for monitoring.
+       
         log.Printf("⚠️ Failed to revoke old refresh token: %v", err)
     }
 
@@ -309,9 +286,7 @@ func (s *AuthService) Refresh(ctx context.Context, rawToken string) (*RefreshOut
     }, nil
 }
 
-// =====================================================
-// LOGOUT
-// =====================================================
+
 
 func (s *AuthService) Logout(ctx context.Context, rawToken string) error {
 	rawToken = strings.TrimSpace(rawToken)
@@ -323,8 +298,7 @@ func (s *AuthService) Logout(ctx context.Context, rawToken string) error {
 	refreshToken, err := s.rtRepo.GetByHash(ctx, tokenHash)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil // already logged out or not found
-		}
+			return nil }
 		return fmt.Errorf("failed to get refresh token: %w", err)
 	}
 
@@ -335,9 +309,7 @@ func (s *AuthService) Logout(ctx context.Context, rawToken string) error {
 	return s.rtRepo.Revoke(ctx, refreshToken)
 }
 
-// =====================================================
-// GET USER
-// =====================================================
+
 
 func (s *AuthService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	user, err := s.userRepo.GetByID(ctx, id)
@@ -350,9 +322,7 @@ func (s *AuthService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.Us
 	return user, nil
 }
 
-// =====================================================
-// JWT CLAIMS
-// =====================================================
+
 
 type AuthClaims struct {
 	UserID    uuid.UUID       `json:"user_id"`
@@ -361,9 +331,6 @@ type AuthClaims struct {
 	jwt.RegisteredClaims
 }
 
-// =====================================================
-// ACCESS TOKEN CREATION
-// =====================================================
 
 func (s *AuthService) newAccessToken(user *models.User) (string, error) {
 	now := time.Now()
@@ -384,9 +351,6 @@ func (s *AuthService) newAccessToken(user *models.User) (string, error) {
 	return token.SignedString(s.cfg.JWTSigningKey)
 }
 
-// =====================================================
-// REFRESH TOKEN CREATION
-// =====================================================
 
 func (s *AuthService) newRefreshTokenRaw(user *models.User) (string, *models.RefreshToken, error) {
 	now := time.Now()
@@ -422,9 +386,7 @@ func (s *AuthService) newRefreshTokenRaw(user *models.User) (string, *models.Ref
 	return raw, refreshToken, nil
 }
 
-// =====================================================
-// ACCESS TOKEN VALIDATION
-// =====================================================
+
 
 func (s *AuthService) ParseAndValidateAccessToken(tokenString string) (*AuthClaims, error) {
 	if tokenString == "" {
@@ -468,9 +430,7 @@ func (s *AuthService) ParseAndValidateAccessToken(tokenString string) (*AuthClai
 	return claims, nil
 }
 
-// =====================================================
-// REFRESH TOKEN VALIDATION
-// =====================================================
+
 
 func (s *AuthService) parseRefreshToken(tokenString string) (*AuthClaims, error) {
 	tokenString = strings.TrimSpace(tokenString)
@@ -515,9 +475,6 @@ func (s *AuthService) parseRefreshToken(tokenString string) (*AuthClaims, error)
 	return claims, nil
 }
 
-// =====================================================
-// TOKEN HASH
-// =====================================================
 
 func hashToken(token string) string {
 	hash := sha256.Sum256([]byte(token))

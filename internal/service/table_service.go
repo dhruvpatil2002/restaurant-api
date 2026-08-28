@@ -25,9 +25,7 @@ func NewTableService(
 	}
 }
 
-// =====================================================
-// CHECK RESTAURANT OWNER
-// =====================================================
+
 
 func (s *TableService) checkRestaurantOwner(
 	restaurantID uuid.UUID,
@@ -49,9 +47,7 @@ func (s *TableService) checkRestaurantOwner(
 	return nil
 }
 
-// =====================================================
-// CREATE TABLE
-// =====================================================
+
 
 func (s *TableService) Create(
 	restaurantID uuid.UUID,
@@ -79,18 +75,14 @@ func (s *TableService) Create(
 		)
 	}
 
-	// Never trust restaurant_id from request body
+	
 	table.RestaurantID = restaurantID
 
-	// New tables are available by default
+	
 	table.IsAvailable = true
 
 	return s.TableRepo.Create(table)
 }
-
-// =====================================================
-// GET RESTAURANT TABLES
-// =====================================================
 
 func (s *TableService) GetRestaurantTables(
 	restaurantID uuid.UUID,
@@ -101,9 +93,7 @@ func (s *TableService) GetRestaurantTables(
 	)
 }
 
-// =====================================================
-// GET TABLE BY ID
-// =====================================================
+
 
 func (s *TableService) GetByID(
 	id uuid.UUID,
@@ -112,9 +102,6 @@ func (s *TableService) GetByID(
 	return s.TableRepo.FindByID(id)
 }
 
-// =====================================================
-// UPDATE TABLE
-// =====================================================
 
 func (s *TableService) Update(
 	tableID uuid.UUID,
@@ -122,14 +109,12 @@ func (s *TableService) Update(
 	data *models.RestaurantTable,
 ) (*models.RestaurantTable, error) {
 
-	// Find existing table
 	table, err := s.TableRepo.FindByID(tableID)
 
 	if err != nil {
 		return nil, errors.New("table not found")
 	}
 
-	// Check ownership
 	if err := s.checkRestaurantOwner(
 		table.RestaurantID,
 		userID,
@@ -160,9 +145,7 @@ func (s *TableService) Update(
 	return table, nil
 }
 
-// =====================================================
-// DELETE TABLE
-// =====================================================
+
 
 func (s *TableService) Delete(
 	tableID uuid.UUID,
@@ -186,9 +169,6 @@ func (s *TableService) Delete(
 	return s.TableRepo.Delete(tableID)
 }
 
-// =====================================================
-// UPDATE AVAILABILITY
-// =====================================================
 
 func (s *TableService) UpdateAvailability(
 	tableID uuid.UUID,
@@ -203,7 +183,6 @@ func (s *TableService) UpdateAvailability(
 		return nil, errors.New("table not found")
 	}
 
-	// Check restaurant ownership
 	if err := s.checkRestaurantOwner(
 		table.RestaurantID,
 		userID,
@@ -211,10 +190,10 @@ func (s *TableService) UpdateAvailability(
 		return nil, err
 	}
 
-	// Update availability
+
 	table.IsAvailable = available
 
-	// Save
+
 	if err := s.TableRepo.Update(table); err != nil {
 		return nil, err
 	}

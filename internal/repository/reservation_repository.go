@@ -22,9 +22,6 @@ func NewReservationRepository(
 	}
 }
 
-// =====================================================
-// CREATE
-// =====================================================
 
 func (r *ReservationRepository) Create(
 	reservation *models.Reservation,
@@ -33,9 +30,7 @@ func (r *ReservationRepository) Create(
 	return r.DB.Create(reservation).Error
 }
 
-// =====================================================
-// FIND BY ID
-// =====================================================
+
 
 func (r *ReservationRepository) FindByID(
 	id uuid.UUID,
@@ -55,9 +50,6 @@ func (r *ReservationRepository) FindByID(
 	return &reservation, nil
 }
 
-// =====================================================
-// GET USER RESERVATIONS
-// =====================================================
 
 func (r *ReservationRepository) FindByUserID(
 	userID uuid.UUID,
@@ -74,9 +66,6 @@ func (r *ReservationRepository) FindByUserID(
 	return reservations, err
 }
 
-// =====================================================
-// GET RESTAURANT RESERVATIONS
-// =====================================================
 
 func (r *ReservationRepository) FindByRestaurantID(
 	restaurantID uuid.UUID,
@@ -93,9 +82,6 @@ func (r *ReservationRepository) FindByRestaurantID(
 	return reservations, err
 }
 
-// =====================================================
-// CHECK TABLE CONFLICT
-// =====================================================
 
 func (r *ReservationRepository) HasConflict(
 	tableID uuid.UUID,
@@ -122,9 +108,6 @@ func (r *ReservationRepository) HasConflict(
 	return count > 0, err
 }
 
-// =====================================================
-// UPDATE
-// =====================================================
 
 func (r *ReservationRepository) Update(
 	reservation *models.Reservation,
@@ -133,9 +116,6 @@ func (r *ReservationRepository) Update(
 	return r.DB.Save(reservation).Error
 }
 
-// =====================================================
-// DELETE
-// =====================================================
 
 func (r *ReservationRepository) Delete(
 	id uuid.UUID,

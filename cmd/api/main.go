@@ -45,24 +45,18 @@ type Application struct {
 }
 
 func main() {
-	// Load environment variables
+	
 	if err := godotenv.Load(); err != nil {
 		log.Println("no .env file found, using environment variables")
 	}
 
-	// =========================
-	// CONFIG
-	// =========================
 
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// =========================
-	// DATABASE
-	// =========================
-
+	
 	db, err := gorm.Open(
 		postgres.Open(cfg.DBURL),
 		&gorm.Config{
@@ -76,10 +70,7 @@ func main() {
 
 	log.Println("database connected")
 
-	// =========================
-	// DATABASE MIGRATION
-	// =========================
-
+	
 	if err := db.AutoMigrate(
 		&models.User{},
 		&models.RefreshToken{},
@@ -96,9 +87,7 @@ func main() {
 
 	log.Println("database migration completed")
 
-	// =========================
-	// REPOSITORIES
-	// =========================
+	
 
 	userRepo := repository.NewUserRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
@@ -109,9 +98,7 @@ func main() {
 	orderRepo := repository.NewOrderRepository(db)
 	reviewRepo := repository.NewReviewRepository(db)
 
-	// =========================
-	// SERVICES
-	// =========================
+	
 
 	authSvc := service.NewAuthService(
 		userRepo,
@@ -126,9 +113,7 @@ func main() {
 	orderService := service.NewOrderService(orderRepo, menuRepo, restaurantRepo)
 	reviewService := service.NewReviewService(reviewRepo, restaurantRepo, orderRepo)
 
-	// =========================
-	// HANDLERS
-	// =========================
+	
 
 	authHandler := handler.NewAuthHandler(authSvc)
 	restaurantHandler := handler.NewRestaurantHandler(restaurantService)
@@ -138,9 +123,7 @@ func main() {
 	orderHandler := handler.NewOrderHandler(orderService)
 	reviewHandler := handler.NewReviewHandler(reviewService)
 
-	// =========================
-	// APPLICATION
-	// =========================
+	
 
 	app := &Application{
 		Config:             &cfg,
@@ -167,9 +150,7 @@ func main() {
 
 
 
-	// =========================
-	// SERVER
-	// =========================
+	
 
 	srv := &http.Server{
 		Addr:         ":8080",
@@ -179,7 +160,7 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
-	// Start server in goroutine
+	
 	go func() {
 		log.Println("server listening on :8080")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -187,14 +168,14 @@ func main() {
 		}
 	}()
 
-	// Wait for interrupt signal
+	
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
 	log.Println("shutting down server...")
 
-	// Graceful shutdown with timeout
+	
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 

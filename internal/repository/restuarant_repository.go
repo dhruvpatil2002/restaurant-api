@@ -17,9 +17,6 @@ func NewRestaurantRepository(db *gorm.DB) *RestaurantRepository {
 	}
 }
 
-// =====================================================
-// CREATE
-// =====================================================
 
 func (r *RestaurantRepository) Create(
 	restaurant *models.Restaurant,
@@ -28,9 +25,7 @@ func (r *RestaurantRepository) Create(
 	return r.DB.Create(restaurant).Error
 }
 
-// =====================================================
-// FIND BY ID
-// =====================================================
+
 
 func (r *RestaurantRepository) FindByID(
 	id uuid.UUID,
@@ -49,9 +44,7 @@ func (r *RestaurantRepository) FindByID(
 	return &restaurant, nil
 }
 
-// =====================================================
-// FIND BY OWNER
-// =====================================================
+
 
 func (r *RestaurantRepository) FindByOwnerID(
 	ownerID uuid.UUID,
@@ -70,10 +63,6 @@ func (r *RestaurantRepository) FindByOwnerID(
 	return &restaurant, nil
 }
 
-// =====================================================
-// FIND ALL
-// =====================================================
-
 func (r *RestaurantRepository) FindAll() (
 	[]models.Restaurant,
 	error,
@@ -88,9 +77,7 @@ func (r *RestaurantRepository) FindAll() (
 	return restaurants, err
 }
 
-// =====================================================
-// UPDATE
-// =====================================================
+
 
 func (r *RestaurantRepository) Update(
 	restaurant *models.Restaurant,

@@ -10,9 +10,7 @@ func (app *Application) routes() http.Handler {
 
 	mux := http.NewServeMux()
 
-	// ==================================================
-	// HEALTH
-	// ==================================================
+	
 
 	mux.HandleFunc(
 		"GET /healthcheck",
@@ -28,9 +26,7 @@ func (app *Application) routes() http.Handler {
 		},
 	)
 
-	// ==================================================
-	// AUTH - PUBLIC
-	// ==================================================
+	
 
 	mux.HandleFunc(
 		"POST /auth/register",
@@ -52,18 +48,12 @@ func (app *Application) routes() http.Handler {
 		app.AuthHandler.Logout,
 	)
 
-	// ==================================================
-	// AUTH MIDDLEWARE
-	// ==================================================
-
+	
 	authMW := middleware.AuthMiddleware(
 		app.AuthService,
 	)
 
-	// ==================================================
-	// AUTH - PROTECTED
-	// ==================================================
-
+	
 	mux.Handle(
 		"GET /auth/me",
 		authMW(
@@ -73,9 +63,7 @@ func (app *Application) routes() http.Handler {
 		),
 	)
 
-	// ==================================================
-	// RESTAURANT - PUBLIC
-	// ==================================================
+	
 
 	mux.HandleFunc(
 		"GET /api/restaurants",
@@ -87,9 +75,7 @@ func (app *Application) routes() http.Handler {
 		app.RestaurantHandler.GetByID,
 	)
 
-	// ==================================================
-	// RESTAURANT - OWNER
-	// ==================================================
+	
 
 	mux.Handle(
 		"POST /api/restaurants",
@@ -135,10 +121,7 @@ func (app *Application) routes() http.Handler {
 		),
 	)
 
-	// ==================================================
-	// MENU - PUBLIC
-	// ==================================================
-
+	
 	mux.HandleFunc(
 		"GET /api/restaurants/{restaurantId}/menu",
 		app.MenuHandler.GetRestaurantMenuPaginated,
@@ -149,9 +132,7 @@ func (app *Application) routes() http.Handler {
 		app.MenuHandler.GetByID,
 	)
 
-	// ==================================================
-	// MENU - OWNER
-	// ==================================================
+	
 
 	mux.Handle(
 		"POST /api/restaurants/{restaurantId}/menu",
@@ -197,9 +178,7 @@ func (app *Application) routes() http.Handler {
 		),
 	)
 
-	// ==================================================
-	// TABLE - PUBLIC
-	// ==================================================
+	
 
 	mux.HandleFunc(
 		"GET /api/restaurants/{restaurantId}/tables",
@@ -211,9 +190,6 @@ func (app *Application) routes() http.Handler {
 		app.TableHandler.GetByID,
 	)
 
-	// ==================================================
-	// TABLE - OWNER
-	// ==================================================
 
 	mux.Handle(
 		"POST /api/restaurants/{restaurantId}/tables",
@@ -259,9 +235,6 @@ func (app *Application) routes() http.Handler {
 		),
 	)
 
-	// ==================================================
-	// RESERVATION - CUSTOMER
-	// ==================================================
 
 	mux.Handle(
 		"POST /api/reservations",
@@ -305,9 +278,7 @@ func (app *Application) routes() http.Handler {
 		),
 	)
 
-	// ==================================================
-	// RESERVATION - OWNER
-	// ==================================================
+	
 
 	mux.Handle(
 		"GET /api/restaurants/{restaurantId}/reservations",
@@ -331,10 +302,7 @@ func (app *Application) routes() http.Handler {
 		),
 	)
 
-	// ==================================================
-	// ORDER - CUSTOMER
-	// ==================================================
-
+	
 	mux.Handle(
 		"POST /api/orders",
 		authMW(
@@ -377,9 +345,7 @@ func (app *Application) routes() http.Handler {
 		),
 	)
 
-	// ==================================================
-	// ORDER - OWNER
-	// ==================================================
+	
 
 	mux.Handle(
 		"GET /api/restaurants/{restaurantId}/orders",
@@ -403,9 +369,7 @@ func (app *Application) routes() http.Handler {
 		),
 	)
 
-	// ==================================================
-	// REVIEW - PUBLIC
-	// ==================================================
+	
 
 	mux.Handle(
 		"GET /api/restaurants/{restaurantId}/reviews",
@@ -421,9 +385,6 @@ func (app *Application) routes() http.Handler {
 		),
 	)
 
-	// ==================================================
-	// REVIEW - CUSTOMER
-	// ==================================================
 
 	mux.Handle(
 		"POST /api/restaurants/{restaurantId}/reviews",
@@ -469,9 +430,6 @@ func (app *Application) routes() http.Handler {
 		),
 	)
 
-	// ==================================================
-	// CORS
-	// ==================================================
 
 	corsHandler := http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
@@ -500,9 +458,7 @@ func (app *Application) routes() http.Handler {
 		},
 	)
 
-	// ==================================================
-	// LOGGING
-	// ==================================================
+	
 
 	return middleware.Logging(
 		corsHandler,

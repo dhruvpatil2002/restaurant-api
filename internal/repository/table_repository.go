@@ -17,7 +17,7 @@ func NewTableRepository(db *gorm.DB) *TableRepository {
 	}
 }
 
-// Create table
+
 func (r *TableRepository) Create(
 	table *models.RestaurantTable,
 ) error {
@@ -44,7 +44,6 @@ func (r *TableRepository) FindByID(
 	return &table, nil
 }
 
-// Get all tables of restaurant
 func (r *TableRepository) FindByRestaurantID(
 	restaurantID uuid.UUID,
 ) ([]models.RestaurantTable, error) {
@@ -60,7 +59,7 @@ func (r *TableRepository) FindByRestaurantID(
 	return tables, err
 }
 
-// Update table
+
 func (r *TableRepository) Update(
 	table *models.RestaurantTable,
 ) error {
@@ -68,7 +67,7 @@ func (r *TableRepository) Update(
 	return r.DB.Save(table).Error
 }
 
-// Delete table
+
 func (r *TableRepository) Delete(
 	id uuid.UUID,
 ) error {

@@ -17,7 +17,7 @@ func NewMenuRepository(db *gorm.DB) *MenuRepository {
 	}
 }
 
-// Create menu item
+
 func (r *MenuRepository) Create(
 	menu *models.Menu,
 ) error {
@@ -42,7 +42,7 @@ func (r *MenuRepository) FindByID(
 	return &menu, nil
 }
 
-// Get all menu items of a restaurant
+
 func (r *MenuRepository) FindByRestaurantID(
 	restaurantID uuid.UUID,
 ) ([]models.Menu, error) {
@@ -57,7 +57,7 @@ func (r *MenuRepository) FindByRestaurantID(
 	return menus, err
 }
 
-// Get menu by category
+
 func (r *MenuRepository) FindByCategory(
 	restaurantID uuid.UUID,
 	category string,
@@ -77,14 +77,13 @@ func (r *MenuRepository) FindByCategory(
 	return menus, err
 }
 
-// Update
 func (r *MenuRepository) Update(
 	menu *models.Menu,
 ) error {
 	return r.DB.Save(menu).Error
 }
 
-// Delete
+
 func (r *MenuRepository) Delete(
 	id uuid.UUID,
 ) error {
@@ -116,7 +115,7 @@ func (r *MenuRepository) FindPaginated(
 			restaurantID,
 		)
 
-	// Search by menu name or description
+
 	if search != "" {
 		query = query.Where(
 			"(name ILIKE ? OR description ILIKE ?)",
@@ -125,15 +124,14 @@ func (r *MenuRepository) FindPaginated(
 		)
 	}
 
-	// Category filter
+
 	if category != "" {
 		query = query.Where(
 			"category = ?",
 			category,
 		)
 	}
-
-	// Availability filter
+	
 	if available != nil {
 		query = query.Where(
 			"is_available = ?",
@@ -141,12 +139,11 @@ func (r *MenuRepository) FindPaginated(
 		)
 	}
 
-	// Count total matching records
+	
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Get paginated records
 	if err := query.
 		Order("created_at DESC").
 		Offset(offset).

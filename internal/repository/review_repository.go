@@ -17,9 +17,6 @@ func NewReviewRepository(db *gorm.DB) *ReviewRepository {
 	}
 }
 
-// =====================================================
-// CREATE
-// =====================================================
 
 func (r *ReviewRepository) Create(
 	review *models.Review,
@@ -28,9 +25,6 @@ func (r *ReviewRepository) Create(
 	return r.DB.Create(review).Error
 }
 
-// =====================================================
-// FIND BY ID
-// =====================================================
 
 func (r *ReviewRepository) FindByID(
 	id uuid.UUID,
@@ -50,9 +44,8 @@ func (r *ReviewRepository) FindByID(
 	return &review, nil
 }
 
-// =====================================================
-// FIND RESTAURANT REVIEWS
-// =====================================================
+
+
 
 func (r *ReviewRepository) FindByRestaurantID(
 	restaurantID uuid.UUID,
@@ -69,9 +62,7 @@ func (r *ReviewRepository) FindByRestaurantID(
 	return reviews, err
 }
 
-// =====================================================
-// FIND USER REVIEWS
-// =====================================================
+
 
 func (r *ReviewRepository) FindByUserID(
 	userID uuid.UUID,
@@ -88,9 +79,7 @@ func (r *ReviewRepository) FindByUserID(
 	return reviews, err
 }
 
-// =====================================================
-// FIND USER RESTAURANT REVIEW
-// =====================================================
+
 
 func (r *ReviewRepository) FindByUserAndRestaurant(
 	userID uuid.UUID,
@@ -115,9 +104,7 @@ func (r *ReviewRepository) FindByUserAndRestaurant(
 	return &review, nil
 }
 
-// =====================================================
-// UPDATE
-// =====================================================
+
 
 func (r *ReviewRepository) Update(
 	review *models.Review,
@@ -126,9 +113,6 @@ func (r *ReviewRepository) Update(
 	return r.DB.Save(review).Error
 }
 
-// =====================================================
-// DELETE
-// =====================================================
 
 func (r *ReviewRepository) Delete(
 	id uuid.UUID,

@@ -17,9 +17,6 @@ func NewOrderRepository(db *gorm.DB) *OrderRepository {
 	}
 }
 
-// =====================================================
-// CREATE ORDER
-// =====================================================
 
 func (r *OrderRepository) Create(
 	order *models.Order,
@@ -28,9 +25,8 @@ func (r *OrderRepository) Create(
 	return r.DB.Create(order).Error
 }
 
-// =====================================================
-// GET ORDER BY ID
-// =====================================================
+
+
 
 func (r *OrderRepository) FindByID(
 	id uuid.UUID,
@@ -51,9 +47,7 @@ func (r *OrderRepository) FindByID(
 	return &order, nil
 }
 
-// =====================================================
-// GET USER ORDERS
-// =====================================================
+
 
 func (r *OrderRepository) FindByUserID(
 	userID uuid.UUID,
@@ -71,9 +65,6 @@ func (r *OrderRepository) FindByUserID(
 	return orders, err
 }
 
-// =====================================================
-// GET RESTAURANT ORDERS
-// =====================================================
 
 func (r *OrderRepository) FindByRestaurantID(
 	restaurantID uuid.UUID,
@@ -91,9 +82,6 @@ func (r *OrderRepository) FindByRestaurantID(
 	return orders, err
 }
 
-// =====================================================
-// UPDATE
-// =====================================================
 
 func (r *OrderRepository) Update(
 	order *models.Order,
@@ -102,9 +90,6 @@ func (r *OrderRepository) Update(
 	return r.DB.Save(order).Error
 }
 
-// =====================================================
-// DELETE
-// =====================================================
 
 func (r *OrderRepository) Delete(
 	id uuid.UUID,

@@ -20,7 +20,6 @@ import (
 
 
 
-// ---------- handler struct ----------
 
 type AuthHandler struct {
 	authSvc *service.AuthService
@@ -30,9 +29,7 @@ func NewAuthHandler(authSvc *service.AuthService) *AuthHandler {
 	return &AuthHandler{authSvc: authSvc}
 }
 
-// ---------- request types ----------
 
-// handler/auth_handler.go
 
 type RegisterRequest struct {
     Name     string          `json:"name"`
@@ -58,7 +55,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
         return
     }
     
-    // Log the raw role value for debugging
+    
     var rawRole string
     if req.Role != nil {
         rawRole = string(*req.Role)
@@ -67,13 +64,11 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
     }
     log.Printf("📥 Register payload: name=%s, email=%s, role=%q", req.Name, req.Email, rawRole)
 
-    // Validate required fields
     if req.Name == "" || req.Email == "" || req.Password == "" {
         writeJSON(w, http.StatusBadRequest, map[string]string{"error": "name, email, password required"})
         return
     }
 
-    // Validate role if provided
     if req.Role != nil {
         switch *req.Role {
         case models.RoleCustomer, models.RoleStaff, models.RoleOwner, models.RoleAdmin:
@@ -86,7 +81,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
         }
     }
 
-    // Pass role to service (nil means use default)
+    
     var role models.UserRole
     if req.Role != nil {
         role = *req.Role
@@ -151,7 +146,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set refresh token cookie
+	
 	http.SetCookie(w, &http.Cookie{
 		Name:     "refresh_token",
 		Value:    out.RefreshTokenRaw,
@@ -237,7 +232,7 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ✅ Fixed syntax error: type assertion in one line
+
 	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
 	if !ok {
 		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "user_id missing in context"})

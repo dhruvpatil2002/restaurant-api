@@ -25,17 +25,14 @@ func NewMenuHandler(
 	}
 }
 
-// =====================================================
-// CREATE MENU
-// POST /api/restaurants/{restaurantId}/menu
-// =====================================================
+
 
 func (h *MenuHandler) Create(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
 
-	// Get restaurant ID from URL
+
 	restaurantID, err := uuid.Parse(
 		r.PathValue("restaurantId"),
 	)
@@ -49,7 +46,7 @@ func (h *MenuHandler) Create(
 		return
 	}
 
-	// Get authenticated user ID from JWT middleware
+	
 	userIDValue := r.Context().Value(
 		middleware.UserIDKey,
 	)
@@ -65,7 +62,6 @@ func (h *MenuHandler) Create(
 		return
 	}
 
-	// Decode request body
 	var menu models.Menu
 
 	if err := json.NewDecoder(r.Body).Decode(&menu); err != nil {
@@ -79,7 +75,7 @@ func (h *MenuHandler) Create(
 		return
 	}
 
-	// Create menu
+	
 	if err := h.Service.Create(
 		restaurantID,
 		userID,
@@ -120,10 +116,7 @@ func (h *MenuHandler) Create(
 	)
 }
 
-// =====================================================
-// GET RESTAURANT MENU
-// GET /api/restaurants/{restaurantId}/menu
-// =====================================================
+
 
 func (h *MenuHandler) GetRestaurantMenuPaginated(
 	w http.ResponseWriter,
@@ -186,15 +179,10 @@ func (h *MenuHandler) GetRestaurantMenuPaginated(
 
 	search := r.URL.Query().Get("search")
 
-	// =========================
-	// CATEGORY
-	// =========================
-
+	
 	category := r.URL.Query().Get("category")
 
-	// =========================
-	// AVAILABILITY
-	// =========================
+	
 
 	var available *bool
 
@@ -282,10 +270,7 @@ func (h *MenuHandler) GetByID(
 	)
 }
 
-// =====================================================
-// UPDATE MENU
-// PUT /api/menu/{id}
-// =====================================================
+
 
 func (h *MenuHandler) Update(
 	w http.ResponseWriter,
@@ -307,7 +292,7 @@ func (h *MenuHandler) Update(
 		return
 	}
 
-	// Get authenticated user
+	
 	userIDValue := r.Context().Value(
 		middleware.UserIDKey,
 	)
@@ -380,10 +365,6 @@ func (h *MenuHandler) Update(
 	)
 }
 
-// =====================================================
-// DELETE MENU
-// DELETE /api/menu/{id}
-// =====================================================
 
 func (h *MenuHandler) Delete(
 	w http.ResponseWriter,
@@ -405,7 +386,7 @@ func (h *MenuHandler) Delete(
 		return
 	}
 
-	// Get authenticated user
+	
 	userIDValue := r.Context().Value(
 		middleware.UserIDKey,
 	)
@@ -460,10 +441,6 @@ func (h *MenuHandler) Delete(
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// =====================================================
-// UPDATE AVAILABILITY
-// PATCH /api/menu/{id}/availability
-// =====================================================
 
 func (h *MenuHandler) UpdateAvailability(
 	w http.ResponseWriter,
@@ -485,7 +462,7 @@ func (h *MenuHandler) UpdateAvailability(
 		return
 	}
 
-	// Get authenticated user
+	
 	userIDValue := r.Context().Value(
 		middleware.UserIDKey,
 	)
@@ -503,7 +480,7 @@ func (h *MenuHandler) UpdateAvailability(
 		return
 	}
 
-	// Request body
+	
 	var request struct {
 		IsAvailable bool `json:"is_available"`
 	}

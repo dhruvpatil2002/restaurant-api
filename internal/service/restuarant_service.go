@@ -30,9 +30,6 @@ func NewRestaurantService(
 	}
 }
 
-// =====================================================
-// CREATE
-// =====================================================
 
 func (s *RestaurantService) Create(
 	ownerID uuid.UUID,
@@ -51,15 +48,13 @@ func (s *RestaurantService) Create(
 		return err
 	}
 
-	// NEVER accept OwnerID from client
+	
 	restaurant.OwnerID = ownerID
 
 	return s.Repo.Create(restaurant)
 }
 
-// =====================================================
-// GET BY OWNER
-// =====================================================
+
 
 func (s *RestaurantService) GetByOwner(
 	ownerID uuid.UUID,
@@ -74,9 +69,7 @@ func (s *RestaurantService) GetByOwner(
 	return restaurant, err
 }
 
-// =====================================================
-// GET ALL
-// =====================================================
+
 
 func (s *RestaurantService) GetAll() (
 	[]models.Restaurant,
@@ -140,9 +133,6 @@ func (s *RestaurantService) GetAllPaginated(
 	}, nil
 }
 
-// =====================================================
-// GET BY ID
-// =====================================================
 
 func (s *RestaurantService) GetByID(
 	id uuid.UUID,
@@ -157,9 +147,7 @@ func (s *RestaurantService) GetByID(
 	return restaurant, err
 }
 
-// =====================================================
-// UPDATE
-// =====================================================
+
 
 func (s *RestaurantService) Update(
 	ownerID uuid.UUID,
@@ -181,7 +169,7 @@ func (s *RestaurantService) Update(
 		return nil, ErrNotRestaurantOwner
 	}
 
-	// Update allowed fields only
+	
 	restaurant.Name = data.Name
 	restaurant.Description = data.Description
 
@@ -206,9 +194,6 @@ func (s *RestaurantService) Update(
 	return restaurant, nil
 }
 
-// =====================================================
-// DELETE
-// =====================================================
 
 func (s *RestaurantService) Delete(
 	ownerID uuid.UUID,
