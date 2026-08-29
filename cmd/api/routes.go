@@ -2,7 +2,7 @@ package main
 
 import (
 	"net/http"
-
+"log"
 	"restaurant-backend/internal/middleware"
 )
 
@@ -304,7 +304,7 @@ func (app *Application) routes() http.Handler {
 
 	
 	mux.Handle(
-		"POST /api/orders",
+		" /api/orders",
 		authMW(
 			middleware.RequireRole("customer", "admin")(
 				http.HandlerFunc(
@@ -313,9 +313,10 @@ func (app *Application) routes() http.Handler {
 			),
 		),
 	)
+	log.Println("✅ Order routes registered")
 
 	mux.Handle(
-		"GET /api/my/orders",
+		" /api/my/orders",
 		authMW(
 			middleware.RequireRole("customer", "admin")(
 				http.HandlerFunc(
@@ -326,7 +327,7 @@ func (app *Application) routes() http.Handler {
 	)
 
 	mux.Handle(
-		"GET /api/orders/{id}",
+		" /api/orders/{id}",
 		authMW(
 			http.HandlerFunc(
 				app.OrderHandler.GetByID,
@@ -335,7 +336,7 @@ func (app *Application) routes() http.Handler {
 	)
 
 	mux.Handle(
-		"PATCH /api/orders/{id}/cancel",
+		"/api/orders/{id}/cancel",
 		authMW(
 			middleware.RequireRole("customer", "admin")(
 				http.HandlerFunc(
@@ -348,7 +349,7 @@ func (app *Application) routes() http.Handler {
 	
 
 	mux.Handle(
-		"GET /api/restaurants/{restaurantId}/orders",
+		" /api/restaurants/{restaurantId}/orders",
 		authMW(
 			middleware.RequireRole("owner", "admin")(
 				http.HandlerFunc(
@@ -359,7 +360,7 @@ func (app *Application) routes() http.Handler {
 	)
 
 	mux.Handle(
-		"PATCH /api/orders/{id}/status",
+		"/api/orders/{id}/status",
 		authMW(
 			middleware.RequireRole("owner", "admin")(
 				http.HandlerFunc(
